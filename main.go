@@ -16,7 +16,8 @@ import (
 	"text/template"
 )
 
-const DOCKER_PATH = "/var/lib/docker/graph"
+var graphRoot string
+
 const WHITEOUT = ".wh."
 const Dockerfile = `
 FROM {{.Base}}
@@ -77,7 +78,7 @@ type dockerImage struct {
 }
 
 func (img dockerImage) Path() string {
-	return path.Join("/var/lib/docker/graph", img.Id)
+	return path.Join(graphRoot, img.Id)
 }
 
 // returns a name that doesnt have invalid seperator
@@ -210,13 +211,18 @@ func main() {
 	if err != nil {
 		exit("failed to compile dockerfile template")
 	}
+
 	flTag := flag.String("t", "", "tag name of the new flattened image")
+	flGraph := flag.String("g", "/var/lib/docker/graph", "Path to graph storage base dir")
+
 	flag.Parse()
 	image := flag.Args()[0]
 	if image == "" {
 		exit("Missing image")
 	}
 	fmt.Printf("===> Flattenning image: %s into tag: %s\n", image, *flTag)
+
+  graphRoot = *flGraph
 
 	log("get histories of the current image")
 	histories, err := getHistory(image)
